@@ -274,6 +274,15 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, buf, r.headers.get('content-type') || 'image/jpeg', { 'Cache-Control': 'public, max-age=86400' });
     }
 
+    // pictures for the StreamElements scenes (background etc.), readable from any site
+    if (p.startsWith('/assets/')) {
+      const file = path.basename(p);
+      const full = path.join(PUBLIC_DIR, 'assets', file);
+      if (!/^[\w.-]+\.(jpg|png|webp)$/.test(file) || !fs.existsSync(full)) return send(res, 404, 'Not found');
+      return send(res, 200, fs.readFileSync(full), file.endsWith('.png') ? 'image/png' : file.endsWith('.webp') ? 'image/webp' : 'image/jpeg',
+        { 'Cache-Control': 'public, max-age=86400', 'Access-Control-Allow-Origin': '*' });
+    }
+
     const name = p === '/overlay' ? 'overlay.html' : p === '/setup' ? 'setup.html' : p.slice(1);
     if (STATIC.has(name)) {
       const body = fs.readFileSync(path.join(PUBLIC_DIR, name));
