@@ -1,0 +1,10 @@
+{
+  "name": "elkz-spotify-overlay",
+  "version": "1.0.0",
+  "description": "Now playing overlay for OBS, reading Spotify",
+  "main": "server.js",
+  "private": true,
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=18" },
+  "license": "UNLICENSED"
+}

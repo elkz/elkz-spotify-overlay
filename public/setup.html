@@ -1,0 +1,76 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>elkz now playing setup</title>
+<style>
+  @font-face { font-family: 'Elkz Display'; src: url(ElkzDisplay.woff) format('woff'); }
+  :root { --bg: #0F1113; --panel: #171A1D; --line: #2A2E33; --fg: #EEEDE9; --muted: #8C9196; --accent: #E86200; color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.5 system-ui, sans-serif; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 28px max(16px, env(safe-area-inset-left)) 48px; display: grid; gap: 20px; }
+  h1 { margin: 0; font: 400 2rem/1 'Elkz Display', 'Arial Black', sans-serif; }
+  h1 span { color: var(--accent); }
+  p { margin: 0; color: var(--muted); }
+  .stage { border: 1px solid var(--line); background: repeating-conic-gradient(#14171a 0 25%, #111315 0 50%) 0 0 / 22px 22px; padding: 24px; display: grid; place-items: center; }
+  .stage iframe { border: 0; width: 100%; max-width: 640px; height: 180px; background: transparent; }
+  .stage.tall iframe { max-width: 300px; height: 470px; }
+  .grid { display: flex; flex-wrap: wrap; gap: 14px 22px; }
+  .field { display: grid; gap: 6px; }
+  .field > span { font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+  select, input { font: inherit; color: var(--fg); background: var(--panel); border: 1px solid var(--line); padding: 8px 10px; }
+  .url { display: flex; gap: 8px; flex-wrap: wrap; }
+  .url input { flex: 1; min-width: 0; font-family: ui-monospace, monospace; }
+  button { font: 700 0.95rem system-ui, sans-serif; background: var(--accent); color: #131518; border: 0; padding: 10px 16px; cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  ol { margin: 0; padding-left: 1.2em; color: var(--muted); }
+  ol b { color: var(--fg); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>now <span>playing</span></h1>
+  <p>Pick the look, then copy the address into an OBS browser source. The preview uses made-up tracks.</p>
+  <div class="stage" id="stage"><iframe id="pv" title="Overlay preview"></iframe></div>
+  <div class="grid">
+    <label class="field"><span>Layout</span><select id="layout"><option value="card">Wide card</option><option value="tall">Tall (art on top)</option></select></label>
+    <label class="field"><span>Art side (wide card)</span><select id="art"><option value="left">Left</option><option value="right">Right</option></select></label>
+    <label class="field"><span>Accent colour</span><select id="accent"><option value="art">From the album art</option><option value="brand">Always elkz orange</option></select></label>
+    <label class="field"><span>When paused</span><select id="hide"><option value="10">Hide after 10s</option><option value="3">Hide after 3s</option><option value="30">Hide after 30s</option><option value="0">Stay, show "Paused"</option></select></label>
+    <label class="field"><span>Background</span><select id="bg"><option value="solid">Dark card</option><option value="none">See-through</option></select></label>
+    <label class="field"><span>Time left</span><select id="time"><option value="1">Show</option><option value="0">Hide</option></select></label>
+  </div>
+  <div class="field"><span>OBS browser source URL</span>
+    <div class="url"><input id="out" readonly aria-label="OBS browser source URL"><button id="copy" type="button">Copy</button></div>
+  </div>
+  <ol>
+    <li>In OBS add a <b>Browser</b> source and paste the URL.</li>
+    <li>Size it: <b>1000 × 260</b> for the wide card, <b>500 × 760</b> for tall. It scales to whatever width you give it.</li>
+    <li>Untick <b>Shutdown source when not visible</b> so it keeps up while you switch scenes.</li>
+  </ol>
+</div>
+<script>
+  var ids = ['layout', 'art', 'accent', 'hide', 'bg', 'time'], DEF = { layout: 'card', art: 'left', accent: 'art', hide: '10', bg: 'solid', time: '1' };
+  function query(extra) {
+    var q = new URLSearchParams();
+    ids.forEach(function (id) { var v = document.getElementById(id).value; if (v !== DEF[id]) q.set(id, v); });
+    if (extra) q.set('demo', '1');
+    var s = q.toString(); return s ? '?' + s : '';
+  }
+  function update() {
+    document.getElementById('out').value = location.origin + '/overlay' + query(false);
+    document.getElementById('pv').src = '/overlay' + query(true) + (query(true) ? '' : '');
+    document.getElementById('stage').classList.toggle('tall', document.getElementById('layout').value === 'tall');
+  }
+  ids.forEach(function (id) { document.getElementById(id).addEventListener('change', update); });
+  document.getElementById('copy').addEventListener('click', function () {
+    var i = document.getElementById('out'), b = this;
+    (navigator.clipboard ? navigator.clipboard.writeText(i.value) : Promise.reject()).then(function () { b.textContent = 'Copied'; },
+      function () { i.select(); document.execCommand('copy'); b.textContent = 'Copied'; });
+    setTimeout(function () { b.textContent = 'Copy'; }, 1500);
+  });
+  update();
+</script>
+</body>
+</html>

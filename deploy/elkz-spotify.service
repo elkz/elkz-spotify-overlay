@@ -1,0 +1,19 @@
+# systemd service: keeps the overlay server running and starts it on boot.
+# Copy to /etc/systemd/system/elkz-spotify.service, change User and WorkingDirectory, then:
+#   sudo systemctl daemon-reload && sudo systemctl enable --now elkz-spotify
+[Unit]
+Description=elkz Spotify now playing overlay
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=elkz
+WorkingDirectory=/home/elkz/elkz-spotify-overlay
+ExecStart=/usr/bin/env node server.js
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target
