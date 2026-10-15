@@ -38,7 +38,19 @@ else read -rsp "Spotify Client secret (typing is hidden): " SECRET; echo; fi
 SECRET="${SECRET:-$SECRET_OLD}"
 [ -n "$SECRET" ] || die "The Client secret is needed."
 
-PORT_OLD="$(old PORT)"; PORT="$(ask 'Port to run on (only change it if 8787 is already used)' "${PORT_OLD:-8787}")"
+# stop our own copy first, so it doesn't count as "something else" on the port
+sudo systemctl stop elkz-spotify > /dev/null 2>&1 || true
+port_busy() { (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null; }   # true if something answers on that port
+PORT_OLD="$(old PORT)"; SUGGEST="${PORT_OLD:-8787}"
+while port_busy "$SUGGEST"; do SUGGEST=$((SUGGEST + 1)); done
+if [ -n "$PORT_OLD" ] && [ "$SUGGEST" != "$PORT_OLD" ]; then say "Port $PORT_OLD is being used by something else, so $SUGGEST is suggested instead."; fi
+while true; do
+  PORT="$(ask 'Port to run on (the suggested one is free)' "$SUGGEST")"
+  if port_busy "$PORT"; then
+    echo "Port $PORT is already in use, pick another."
+    command -v ss > /dev/null && sudo ss -ltnp "sport = :$PORT" | tail -n +2 | sed 's/^/   /' || true
+  else break; fi
+done
 PASS="$(old SETUP_PASSWORD)"
 [ -n "$PASS" ] || PASS="$(head -c 18 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c 20)"
 
